@@ -1,0 +1,32 @@
+# Need NVIDIA CUDA base image for GPU acceleration on Whisper and Llama
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# Install python and build tools
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    g++ \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Map python3 to python
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
+
+WORKDIR /app
+
+# Copy requirements and install
+COPY requirements.txt .
+# We need the ML libs here
+# Set env var for llama-cpp-python to compile with CUDA support
+ENV CMAKE_ARGS="-DLLAMA_CUBLAS=on"
+ENV FORCE_CMAKE=1
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Download models script (in prod this would load from a mounted volume to save space)
+# e.g RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small')"
+
+# Copy source code
+COPY . .
+
+# Start the Celery worker for heavy AI tasks
+CMD ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info", "-Q", "ai_tasks", "--concurrency=1"]

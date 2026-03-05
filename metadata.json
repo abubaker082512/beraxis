@@ -1,0 +1,7 @@
+{
+  "name": "Beraxis",
+  "description": "Professional AI Voice Calling Platform for businesses to run outbound & inbound call campaigns with AI agents.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
