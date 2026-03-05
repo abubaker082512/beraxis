@@ -284,6 +284,12 @@
     }
 
     async function startRecording() {
+      // Browsers require HTTPS for microphone access
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.textContent = '❌ HTTPS Required for Microphone';
+        alert('⚠️ Microphone access requires HTTPS.\n\nYour site is on HTTP. Please set up SSL (see guide below) or access this page via:\nhttps://109.199.109.53/api/v1/test/voice\n\nTo enable HTTPS on your VPS:\n1. Install certbot: dnf install certbot\n2. Or set up a self-signed cert in Nginx.');
+        return;
+      }
       stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
       audioCtx = new AudioContext({ sampleRate: 16000 });
       source = audioCtx.createMediaStreamSource(stream);
