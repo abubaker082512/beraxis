@@ -26,29 +26,31 @@ logger = logging.getLogger(settings.APP_NAME)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Connect to DB, Redis, etc.
+    # Startup
     logger.info("Starting Beraxis API...")
-    
-    # Connect to Telephony (Asterisk ARI)
+
+    # ── Auto-create all database tables ──────────────────────────────────────
+    # This ensures the DB is initialized on first deploy without needing Alembic
+    try:
+        from app.database import engine, Base
+        import app.models  # noqa: F401 - ensures all models are registered
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified/created successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+
+    # ── Connect to Telephony (Asterisk ARI) ──────────────────────────────────
     try:
         from app.telephony.router import telephony_router
         asterisk = telephony_router.get_provider("asterisk")
-        # Connect is an async task that runs in the background
         await asterisk.connect()
         logger.info("Connected to Asterisk ARI (Telephony Ready)")
-        
-        # Log network access info
-        import socket
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
-        logger.info(f"API is accessible on local network via: http://{local_ip}:8000")
-        logger.info(f"Documentation: http://{local_ip}:8000/docs")
-        
     except Exception as e:
-        logger.error(f"Failed to connect to Asterisk ARI: {e}")
+        logger.warning(f"Asterisk ARI not available (non-fatal): {e}")
 
     yield
-    # Shutdown: Cleanup connections
+    # Shutdown
     logger.info("Shutting down Beraxis API...")
 
 
