@@ -136,6 +136,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ../dist:/usr/share/nginx/html:ro # Frontend build files
+      - /etc/letsencrypt:/etc/letsencrypt:ro # SSL certificates (Let's Encrypt)
     depends_on:
       - api
 
