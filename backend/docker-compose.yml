@@ -46,8 +46,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    volumes:
-      - ./app:/app/app # Live reload for dev
 
   # Celery Worker (Campaign Dialer, Aggregation)
   celery_worker:
