@@ -53,14 +53,14 @@ websockets==12.0
 requests==2.31.0
 
 # AI — Speech to Text (Faster-Whisper)
-# faster-whisper==1.0.3 (Comment out for lean local API testing)
+faster-whisper==1.0.3
 numpy==1.26.4
 
 # AI — LLM (Llama.cpp Python bindings)
-# llama-cpp-python==0.2.76 (Comment out for lean local API testing)
+llama-cpp-python==0.2.76
 
 # AI — TTS (Piper)
-# piper-tts==1.2.0 (Fails on some Windows setups, comment out for local REST API testing)
+piper-tts==1.2.0
 
 # Audio Processing
 soundfile==0.12.1

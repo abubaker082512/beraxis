@@ -46,6 +46,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - ./models:/app/models
+      - ./recordings:/app/recordings
 
   # Celery Worker (Campaign Dialer, Aggregation)
   celery_worker:
@@ -119,9 +122,7 @@ services:
     environment:
       - ASTERISK_ALLOW_INSECURE_ARI=1
     networks:
-      default:
-        aliases:
-          - asterisk
+      - default
 
   # Nginx Reverse Proxy
   nginx:

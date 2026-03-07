@@ -81,6 +81,7 @@ def _get_llm():
 
 def _find_piper() -> str:
     candidates = [
+        "/app/piper/piper",  # Docker/Linux path (Priority)
         r"d:\Beraxis\backend\venv\Scripts\piper.exe",
         r"d:\Beraxis\venv\Scripts\piper.exe",
         shutil.which("piper")
