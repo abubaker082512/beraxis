@@ -120,7 +120,7 @@ services:
       - "5060:5060/udp" # SIP UDP
       - "8088:8088" # ARI HTTP
       - "9092:9092" # AudioSocket TCP
-      - "10000-20000:10000-20000/udp" # RTP Range
+      - "10000-10500:10000-10500/udp" # RTP Range
     environment:
       - ASTERISK_ALLOW_INSECURE_ARI=1
     networks:
