@@ -60,8 +60,15 @@ class AsteriskProvider(BaseTelephonyProvider):
         
         try:
             # First 16 bytes is the UUID from Asterisk
-            raw_uuid = await reader.readexactly(16)
-            channel_id = str(uuid.UUID(bytes=raw_uuid))
+            # Use a timeout to avoid hanging if Asterisk sends less than 16 bytes
+            raw_id = await asyncio.wait_for(reader.read(16), timeout=5.0)
+            
+            # Try to parse as UUID, if not use as raw string key
+            try:
+                channel_id = str(uuid.UUID(bytes=raw_id))
+            except:
+                channel_id = raw_id.decode('ascii', errors='ignore').strip()
+            
             logger.info(f"AudioSocket matched to channel: {channel_id}")
             
             self.audio_connections[channel_id] = writer

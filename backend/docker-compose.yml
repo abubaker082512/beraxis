@@ -46,6 +46,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      asterisk:
+        condition: service_started
     volumes:
       - ./models:/app/models
       - ./recordings:/app/recordings
@@ -58,7 +60,7 @@ services:
     container_name: beraxis_celery_worker
     restart: always
     env_file: .env
-    command: celery -A app.workers.celery_app worker --loglevel=info -Q default,billing
+    command: celery -A app.workers.celery_app worker --loglevel=info -Q default,billing,ai_tasks
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-beraxis}:${POSTGRES_PASSWORD:-beraxis_pass}@postgres:5432/${POSTGRES_DB:-beraxis_db}
       REDIS_URL: redis://redis:6379/0
