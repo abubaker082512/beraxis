@@ -99,6 +99,37 @@ async def health_check():
     return {"success": True, "data": {"status": "healthy", "version": settings.APP_VERSION}}
 
 
+@app.get(f"{settings.API_PREFIX}/telephony/status", tags=["Health"])
+async def telephony_status():
+    """Diagnostic endpoint to check Asterisk connectivity."""
+    from app.telephony.router import telephony_router
+    asterisk = telephony_router.get_provider("asterisk")
+    
+    # Simple reachability check
+    import socket
+    ari_online = False
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((settings.ASTERISK_HOST, settings.ASTERISK_ARI_PORT))
+        ari_online = (result == 0)
+        sock.close()
+    except:
+        pass
+
+    return {
+        "success": True, 
+        "data": {
+            "provider": "asterisk",
+            "ari_host": settings.ASTERISK_HOST,
+            "ari_port": settings.ASTERISK_ARI_PORT,
+            "ari_reachable": ari_online,
+            "connected_channels": len(getattr(asterisk, "active_channels", {})),
+            "audiosocket_port": 9092
+        }
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)

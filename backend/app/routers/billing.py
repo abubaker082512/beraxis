@@ -178,16 +178,54 @@ async def get_usage(
 @router.post("/webhook")
 async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
     """Stripe webhook handler — handles payment events."""
+    from app.database import AsyncSessionLocal
+    import datetime
+    
     payload = await request.body()
     try:
         event = stripe.Webhook.construct_event(payload, stripe_signature, settings.STRIPE_WEBHOOK_SECRET)
     except Exception:
         return error_response("Invalid webhook signature", 400)
 
-    # Handle events
-    if event["type"] == "invoice.payment_succeeded":
-        pass  # Mark invoice as paid, reset usage
-    elif event["type"] == "customer.subscription.deleted":
-        pass  # Cancel subscription in DB
+    async with AsyncSessionLocal() as db:
+        # Handle events
+        if event["type"] == "invoice.payment_succeeded":
+            invoice_data = event["data"]["object"]
+            customer_id = invoice_data.get("customer")
+            
+            # Find subscription by customer ID
+            stmt = select(Subscription).where(Subscription.stripe_customer_id == customer_id)
+            sub = (await db.execute(stmt)).scalar_one_or_none()
+            
+            if sub:
+                sub.status = "active"
+                sub.current_period_end = datetime.datetime.fromtimestamp(
+                    invoice_data.get("period_end", 0)
+                )
+                
+                # Record invoice
+                new_inv = Invoice(
+                    org_id=sub.org_id,
+                    stripe_invoice_id=invoice_data.get("id"),
+                    invoice_number=invoice_data.get("number"),
+                    amount_usd=invoice_data.get("amount_due", 0) / 100.0,
+                    total_usd=invoice_data.get("total", 0) / 100.0,
+                    status="paid",
+                    invoice_url=invoice_data.get("hosted_invoice_url")
+                )
+                db.add(new_inv)
+                await db.commit()
+                logger.info(f"Processed payment for Org {sub.org_id}")
 
-    return success_response(message="Webhook received")
+        elif event["type"] == "customer.subscription.deleted":
+            sub_data = event["data"]["object"]
+            sub_id = sub_data.get("id")
+            
+            stmt = select(Subscription).where(Subscription.stripe_subscription_id == sub_id)
+            sub = (await db.execute(stmt)).scalar_one_or_none()
+            if sub:
+                sub.status = "canceled"
+                await db.commit()
+                logger.info(f"Canceled subscription {sub_id}")
+
+    return success_response(message="Webhook processed")
