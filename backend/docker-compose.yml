@@ -39,14 +39,13 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-beraxis}:${POSTGRES_PASSWORD:-beraxis_pass}@postgres:5432/${POSTGRES_DB:-beraxis_db}
       REDIS_URL: redis://redis:6379/0
+      ASTERISK_HOST: 127.0.0.1
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
-      asterisk:
         condition: service_started
     volumes:
       - ./models:/app/models
@@ -109,6 +108,7 @@ services:
     image: andrius/asterisk:20
     container_name: beraxis_asterisk
     restart: always
+    network_mode: host # CRITICAL: bypass Docker NAT for SIP/RTP to work correctly
     volumes:
       - ./asterisk_config/ari.conf:/etc/asterisk/ari.conf:ro
       - ./asterisk_config/http.conf:/etc/asterisk/http.conf:ro
@@ -116,15 +116,8 @@ services:
       - ./asterisk_config/extensions.conf:/etc/asterisk/extensions.conf:ro
       - ./asterisk_config/rtp.conf:/etc/asterisk/rtp.conf:ro
       - ./asterisk_config/manager.conf:/etc/asterisk/manager.conf:ro
-    ports:
-      - "5060:5060/udp" # SIP UDP
-      - "8088:8088" # ARI HTTP
-      - "9092:9092" # AudioSocket TCP
-      - "10000-10500:10000-10500/udp" # RTP Range
     environment:
       - ASTERISK_ALLOW_INSECURE_ARI=1
-    networks:
-      - default
 
   # Nginx Reverse Proxy
   nginx:
