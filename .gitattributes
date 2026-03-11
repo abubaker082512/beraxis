@@ -1,0 +1,5 @@
+# Force Unix line endings for all Asterisk config files (CRITICAL for Linux containers)
+backend/asterisk_config/*.conf text eol=lf
+
+# Default behavior for other files
+* text=auto
