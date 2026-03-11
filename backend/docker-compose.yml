@@ -113,6 +113,7 @@ services:
       - ./asterisk_config/ari.conf:/etc/asterisk/ari.conf:ro
       - ./asterisk_config/http.conf:/etc/asterisk/http.conf:ro
       - ./asterisk_config/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk_config/pjsip_wizard.conf:/etc/asterisk/pjsip_wizard.conf:ro
       - ./asterisk_config/extensions.conf:/etc/asterisk/extensions.conf:ro
       - ./asterisk_config/rtp.conf:/etc/asterisk/rtp.conf:ro
       - ./asterisk_config/manager.conf:/etc/asterisk/manager.conf:ro
