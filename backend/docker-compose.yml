@@ -39,7 +39,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-beraxis}:${POSTGRES_PASSWORD:-beraxis_pass}@postgres:5432/${POSTGRES_DB:-beraxis_db}
       REDIS_URL: redis://redis:6379/0
-      ASTERISK_HOST: 127.0.0.1
+      ASTERISK_HOST: 172.17.0.1
     ports:
       - "8000:8000"
     depends_on:
