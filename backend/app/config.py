@@ -80,11 +80,17 @@ class Settings(BaseSettings):
                 with open("/proc/net/route") as fh:
                     for line in fh:
                         fields = line.strip().split()
-                        if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                        if len(fields) < 4 or fields[1] != '00000000':
                             continue
-                        return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
-            except Exception:
-                pass
+                        # fields[2] is the gateway IP in hex (e.g., '010012AC' -> 172.18.0.1)
+                        gw_hex = fields[2]
+                        if gw_hex != '00000000':
+                            gw_int = int(gw_hex, 16)
+                            return socket.inet_ntoa(struct.pack("<L", gw_int))
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to lookup gateway: {e}")
+                return "172.17.0.1" # Fallback to standard docker bridge
         return v
 
     ASTERISK_ARI_PORT: int = 8088
