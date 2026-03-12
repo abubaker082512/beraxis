@@ -68,27 +68,7 @@ class Settings(BaseSettings):
     STRIPE_ENTERPRISE_PRICE_ID: str = "price_enterprise"
 
     # ── Telephony (Asterisk ARI) ─────────────────────────────
-    ASTERISK_HOST: str = "asterisk"
-
-    @field_validator("ASTERISK_HOST", mode="after")
-    @classmethod
-    def resolve_asterisk_host(cls, v: str) -> str:
-        if v.lower() == "gateway":
-            import logging
-            try:
-                import subprocess
-                out = subprocess.check_output(["ip", "route", "show"]).decode("utf-8")
-                for line in out.splitlines():
-                    if line.startswith("default via"):
-                        gw_ip = line.split(" ")[2]
-                        logging.getLogger(__name__).info(f"Dynamically resolved Asterisk host to {gw_ip}")
-                        return gw_ip
-            except Exception as e:
-                logging.getLogger(__name__).error(f"Failed to resolve gateway: {e}")
-            
-            # Ultimate fallback for this specific VPS
-            return "172.18.0.1"
-        return v
+    ASTERISK_HOST: str = "127.0.0.1"
 
     ASTERISK_ARI_PORT: int = 8088
     ASTERISK_ARI_USER: str = "beraxis_ari"
