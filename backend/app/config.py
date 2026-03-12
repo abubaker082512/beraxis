@@ -70,6 +70,16 @@ class Settings(BaseSettings):
     # ── Telephony (Asterisk ARI) ─────────────────────────────
     ASTERISK_HOST: str = "127.0.0.1"
 
+    @field_validator("ASTERISK_HOST", mode="before")
+    @classmethod
+    def strip_asterisk_host(cls, v: str) -> str:
+        """Strip comments and whitespace from the host string."""
+        if not v:
+            return "127.0.0.1"
+        # Remove anything after a '#' or ' '
+        v = v.split("#")[0].split(";")[0].strip()
+        return v
+
     ASTERISK_ARI_PORT: int = 8088
     ASTERISK_ARI_USER: str = "beraxis_ari"
     ASTERISK_ARI_PASS: str = "changeme"

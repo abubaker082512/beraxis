@@ -43,6 +43,7 @@ class AsteriskProvider(BaseTelephonyProvider):
             return
         
         # 1. Start ARI Event Listener
+        logger.info(f"Connecting to Asterisk ARI at {self.base_url} (WS: {self.ws_url})")
         self._ws_task = asyncio.create_task(self._listen_events())
         
         # 2. Start AudioSocket TCP Server (Listeners for incoming audio from Asterisk)
@@ -119,9 +120,14 @@ class AsteriskProvider(BaseTelephonyProvider):
         channel_id = channel.get("id")
 
         if event_type == "StasisStart":
-            logger.info(f"Call {channel_id} entered Stasis.")
-            # If it's an inbound call to an extension that didn't use AudioSocket directly
-            # we can bridge it here.
+            logger.info(f"Channel {channel_id} entered Stasis. Logic: {event.get('args')}")
+            
+            # If this is an outbound call we initiated via ARI, 
+            # we need to redirect it to the AudioSocket dialplan (default,100,1)
+            # to start the audio flow.
+            # StasisStart args usually contains our custom identifier if we passed it.
+            
+            await self._redirect_to_audiosocket(channel_id)
             await self._handle_event("answered", {"channel_id": channel_id})
         
         elif event_type == "StasisEnd":
@@ -153,6 +159,22 @@ class AsteriskProvider(BaseTelephonyProvider):
         url = f"{self.base_url}/channels/{call_id}"
         async with httpx.AsyncClient() as client:
             await client.delete(url, auth=self.auth)
+
+    async def _redirect_to_audiosocket(self, channel_id: str):
+        """Redirects a channel to the dialplan that starts AudioSocket."""
+        url = f"{self.base_url}/channels/{channel_id}/continue"
+        data = {
+            "context": "default",
+            "extension": "100",
+            "priority": 1
+        }
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.post(url, auth=self.auth, json=data)
+                resp.raise_for_status()
+                logger.info(f"Redirected channel {channel_id} to AudioSocket dialplan.")
+            except Exception as e:
+                logger.error(f"Failed to redirect channel {channel_id}: {e}")
 
     async def send_audio(self, call_id: str, audio_bytes: bytes):
         """Sends audio to Asterisk via the TCP socket."""
