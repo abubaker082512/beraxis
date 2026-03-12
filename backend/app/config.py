@@ -69,6 +69,24 @@ class Settings(BaseSettings):
 
     # ── Telephony (Asterisk ARI) ─────────────────────────────
     ASTERISK_HOST: str = "asterisk"
+
+    @field_validator("ASTERISK_HOST", mode="after")
+    @classmethod
+    def resolve_asterisk_host(cls, v: str) -> str:
+        if v.lower() == "gateway":
+            try:
+                import socket
+                import struct
+                with open("/proc/net/route") as fh:
+                    for line in fh:
+                        fields = line.strip().split()
+                        if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                            continue
+                        return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+            except Exception:
+                pass
+        return v
+
     ASTERISK_ARI_PORT: int = 8088
     ASTERISK_ARI_USER: str = "beraxis_ari"
     ASTERISK_ARI_PASS: str = "changeme"
