@@ -39,12 +39,10 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-beraxis}:${POSTGRES_PASSWORD:-beraxis_pass}@postgres:5432/${POSTGRES_DB:-beraxis_db}
       REDIS_URL: redis://redis:6379/0
-      ASTERISK_HOST: host.docker.internal
+      ASTERISK_HOST: 172.18.0.1
     ports:
       - "8000:8000"
       - "9092:9092"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,9 +64,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-beraxis}:${POSTGRES_PASSWORD:-beraxis_pass}@postgres:5432/${POSTGRES_DB:-beraxis_db}
       REDIS_URL: redis://redis:6379/0
-      ASTERISK_HOST: host.docker.internal
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      ASTERISK_HOST: 172.18.0.1
     depends_on:
       - redis
       - postgres
