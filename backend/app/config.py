@@ -74,23 +74,20 @@ class Settings(BaseSettings):
     @classmethod
     def resolve_asterisk_host(cls, v: str) -> str:
         if v.lower() == "gateway":
+            import logging
             try:
-                import socket
-                import struct
-                with open("/proc/net/route") as fh:
-                    for line in fh:
-                        fields = line.strip().split()
-                        if len(fields) < 4 or fields[1] != '00000000':
-                            continue
-                        # fields[2] is the gateway IP in hex (e.g., '010012AC' -> 172.18.0.1)
-                        gw_hex = fields[2]
-                        if gw_hex != '00000000':
-                            gw_int = int(gw_hex, 16)
-                            return socket.inet_ntoa(struct.pack("<L", gw_int))
+                import subprocess
+                out = subprocess.check_output(["ip", "route", "show"]).decode("utf-8")
+                for line in out.splitlines():
+                    if line.startswith("default via"):
+                        gw_ip = line.split(" ")[2]
+                        logging.getLogger(__name__).info(f"Dynamically resolved Asterisk host to {gw_ip}")
+                        return gw_ip
             except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(f"Failed to lookup gateway: {e}")
-                return "172.17.0.1" # Fallback to standard docker bridge
+                logging.getLogger(__name__).error(f"Failed to resolve gateway: {e}")
+            
+            # Ultimate fallback for this specific VPS
+            return "172.18.0.1"
         return v
 
     ASTERISK_ARI_PORT: int = 8088
